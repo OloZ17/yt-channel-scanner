@@ -220,7 +220,7 @@ def _identify_unlisted_videos(
     """Identify videos that are in playlists but not in public videos."""
     potentially_unlisted = []
 
-    print("\n🔍 Analyzing videos...")
+    print("\nAnalyzing videos...")
     print(f"   Total videos in playlists: {len(all_playlist_videos)}")
     print(f"   Total public videos: {len(public_ids)}")
 
@@ -236,9 +236,29 @@ def _identify_unlisted_videos(
     return potentially_unlisted
 
 
+def _identify_unlisted_by_availability(
+    all_playlist_videos: Dict[str, Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """Identify videos by their availability status (for playlists-only mode)."""
+    potentially_unlisted = []
+
+    print("\n🔍 Analyzing videos by availability status...")
+    print(f"   Total videos in playlists: {len(all_playlist_videos)}")
+
+    for video_id, video in all_playlist_videos.items():
+        availability = video.get('availability', 'unknown')
+        if availability in ('unlisted', 'private'):
+            video['reason'] = f"Availability status: {availability}"
+            potentially_unlisted.append(video)
+            title = str(video.get('title', ''))[:50]
+            print(f"   ✓ Found: {title} (availability: {availability})")
+
+    return potentially_unlisted
+
+
 def _fetch_detailed_metadata(videos: List[Dict[str, Any]]) -> None:
     """Fetch detailed metadata for a list of videos."""
-    print(f"📥 Fetching detailed metadata for {len(videos)} videos...")
+    print(f"Fetching detailed metadata for {len(videos)} videos...")
 
     for i, video in enumerate(videos, 1):
         video_dict = dict(video) if isinstance(video, dict) else {}
@@ -287,13 +307,18 @@ def scan_channel(channel_url: str, include_public: bool = True, detailed: bool =
 
     # 4. Identify potentially unlisted videos
     if include_public:
+        # Full scan mode: compare playlist videos with public videos
         potentially_unlisted = _identify_unlisted_videos(all_playlist_videos, public_ids)
-        results['potentially_unlisted'] = potentially_unlisted
-        print(f"\n✓ {len(potentially_unlisted)} potentially unlisted videos found")
+    else:
+        # Playlists-only mode: identify by availability status
+        potentially_unlisted = _identify_unlisted_by_availability(all_playlist_videos)
 
-        # Fetch detailed metadata if requested
-        if detailed and potentially_unlisted:
-            _fetch_detailed_metadata(potentially_unlisted)
+    results['potentially_unlisted'] = potentially_unlisted
+    print(f"\n✓ {len(potentially_unlisted)} potentially unlisted videos found")
+
+    # Fetch detailed metadata if requested
+    if detailed and potentially_unlisted:
+        _fetch_detailed_metadata(potentially_unlisted)
 
     return results
 
@@ -324,7 +349,7 @@ def print_results(results: Dict[str, Any]) -> None:
                 url = str(video.get('url', 'N/A'))
                 upload_date = str(video.get('upload_date', 'N/A'))
                 found_in = str(video.get('found_in_playlist', 'N/A'))
-                print(f"\n  📹 {title}")
+                print(f"\n  {title}")
                 print(f"     URL: {url}")
                 print(f"     Date: {upload_date}")
                 print(f"     Found in: {found_in}")

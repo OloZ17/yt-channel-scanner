@@ -320,6 +320,48 @@ class TestIdentifyUnlistedVideos(unittest.TestCase):
         self.assertEqual(len(result), 0)
 
 
+class TestIdentifyUnlistedByAvailability(unittest.TestCase):
+    """Tests for _identify_unlisted_by_availability internal function."""
+
+    def test_identify_unlisted_by_availability(self):
+        """Test identifying unlisted videos by availability status."""
+        all_playlist_videos = {
+            'vid1': {'id': 'vid1', 'title': 'Public Video', 'availability': 'public'},
+            'vid2': {'id': 'vid2', 'title': 'Unlisted Video', 'availability': 'unlisted'},
+            'vid3': {'id': 'vid3', 'title': 'Private Video', 'availability': 'private'},
+            'vid4': {'id': 'vid4', 'title': 'Another Public', 'availability': 'public'}
+        }
+
+        result = youtube_scanner._identify_unlisted_by_availability(all_playlist_videos)
+
+        self.assertEqual(len(result), 2)
+        # Check both unlisted and private are found
+        availability_statuses = {v['availability'] for v in result}
+        self.assertEqual(availability_statuses, {'unlisted', 'private'})
+        self.assertTrue(all('reason' in v for v in result))
+
+    def test_identify_unlisted_by_availability_all_public(self):
+        """Test when all videos are public."""
+        all_playlist_videos = {
+            'vid1': {'id': 'vid1', 'title': 'Video 1', 'availability': 'public'},
+            'vid2': {'id': 'vid2', 'title': 'Video 2', 'availability': 'public'}
+        }
+
+        result = youtube_scanner._identify_unlisted_by_availability(all_playlist_videos)
+
+        self.assertEqual(len(result), 0)
+
+    def test_identify_unlisted_by_availability_unknown_status(self):
+        """Test with unknown availability status."""
+        all_playlist_videos = {
+            'vid1': {'id': 'vid1', 'title': 'Unknown Video', 'availability': 'unknown'}
+        }
+
+        result = youtube_scanner._identify_unlisted_by_availability(all_playlist_videos)
+
+        self.assertEqual(len(result), 0)
+
+
 class TestFetchDetailedMetadata(unittest.TestCase):
     """Tests for _fetch_detailed_metadata internal function."""
 

@@ -48,11 +48,11 @@ python youtube_scanner.py "https://www.youtube.com/@ChannelName"
 
 ### Available options
 
-| Option             | Description                                                                 |
-| ------------------ | --------------------------------------------------------------------------- |
-| `-o`, `--output`   | Output JSON filename (default: `youtube_scan_YYYY-MM-DD_HHMMSS.json`)       |
-| `--playlists-only` | Scan playlists only (faster, skips public videos)                           |
-| `--detailed`       | Re-fetch metadata for potentially unlisted videos to ensure accuracy        |
+| Option             | Description                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| `-o`, `--output`   | Output JSON filename (default: `youtube_scan_YYYY-MM-DD_HHMMSS.json`)                    |
+| `--playlists-only` | Scan playlists only (faster). Identifies unlisted videos by their availability status    |
+| `--detailed`       | Re-fetch metadata for potentially unlisted videos to ensure accuracy                     |
 
 ### Examples
 
@@ -138,11 +138,15 @@ Simple list of links with dates:
 - Are not indexed by YouTube search
 - **But** can be added to public playlists
 
-This script exploits this behavior: if a video appears in a channel's playlist but not in its public videos, it's likely unlisted.
+The script uses two detection methods:
+
+1. **Full scan mode** (default): Compares videos in playlists with public channel videos. If a video is in a playlist but not in public videos, it's likely unlisted.
+
+2. **Playlists-only mode** (`--playlists-only`): Identifies videos directly by their availability status (unlisted/private) reported by yt-dlp.
 
 ## Limitations
 
-- **Private videos**: Inaccessible (different from "unlisted")
+- **Private videos**: Cannot be played without permission, but can be detected in playlists if their status is visible
 - **Private playlists**: Not scanned
 - **Possible false positives**: A video can be in a playlist without belonging to the channel
 - **Deleted videos**: Sometimes appear in playlists but are no longer accessible
