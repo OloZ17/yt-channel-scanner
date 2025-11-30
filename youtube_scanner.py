@@ -10,7 +10,7 @@ import json
 import sys
 import argparse
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, Union
 
 
 def run_ytdlp(args: List[str]) -> str:
@@ -52,23 +52,27 @@ def get_channel_playlists(channel_url: str) -> List[Dict[str, Any]]:
     return playlists
 
 
-def format_date(date_raw: str, timestamp: str = "NA") -> str:
+def format_date(date_raw: Union[str, int, None] = "NA", timestamp: Union[str, int, None] = "NA") -> str:
     """Format date from YYYYMMDD to YYYY-MM-DD or convert timestamp."""
-    if date_raw and date_raw != "NA" and date_raw != "None":
-        if len(date_raw) == 8:
-            return f"{date_raw[0:4]}-{date_raw[4:6]}-{date_raw[6:8]}"
+    # Ensure we have strings
+    date_str = str(date_raw) if date_raw is not None else "NA"
+    ts_str = str(timestamp) if timestamp is not None else "NA"
 
-    if timestamp and timestamp != "NA" and timestamp != "None":
+    if date_str and date_str != "NA" and date_str != "None":
+        if len(date_str) == 8:
+            return f"{date_str[0:4]}-{date_str[4:6]}-{date_str[6:8]}"
+
+    if ts_str and ts_str != "NA" and ts_str != "None":
         try:
-            ts = int(timestamp)
+            ts = int(ts_str)
             if ts > 0:
                 return datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
         except (ValueError, TypeError, OSError):
             pass
 
     # Return original date_raw if it's not "NA", otherwise return "NA"
-    if date_raw and date_raw not in ("NA", "None"):
-        return date_raw
+    if date_str and date_str not in ("NA", "None"):
+        return date_str
 
     return "NA"
 
@@ -100,9 +104,10 @@ def _extract_date_fields(parts: List[str], include_availability: bool) -> tuple:
 
 def _get_best_date(upload_date_raw: str, timestamp: str, release_date: str, release_timestamp: str) -> str:
     """Get the best available date from upload_date or release_date."""
-    upload_date = format_date(upload_date_raw, timestamp)
+    # Ensure all inputs are strings
+    upload_date = format_date(str(upload_date_raw), str(timestamp))
     if upload_date == "NA":
-        upload_date = format_date(release_date, release_timestamp)
+        upload_date = format_date(str(release_date), str(release_timestamp))
     return upload_date
 
 
@@ -180,7 +185,7 @@ def get_video_details(video_id: str) -> Dict[str, Any]:
     if '|||' in output:
         parts = output.strip().split('|||')
         upload_date_raw = parts[3] if len(parts) > 3 else "NA"
-        upload_date = format_date(upload_date_raw)
+        upload_date = format_date(str(upload_date_raw))
 
         return {
             'availability': parts[2] if len(parts) > 2 else "unknown",
