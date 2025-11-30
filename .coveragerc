@@ -1,0 +1,20 @@
+# Coverage.py configuration file
+
+[run]
+source = youtube_scanner
+omit =
+    */tests/*
+    */test_*
+
+[report]
+precision = 2
+show_missing = True
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.:
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if False:
+    if TYPE_CHECKING:
