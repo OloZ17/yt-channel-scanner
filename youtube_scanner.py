@@ -31,7 +31,7 @@ def get_channel_playlists(channel_url: str) -> List[Dict[str, Any]]:
     """Retrieve all playlists from a channel."""
     print("Searching for channel playlists...")
 
-    # Get playlists
+    # Get playlists (flat-playlist is OK here, we only need playlist metadata)
     playlists_url = channel_url.rstrip('/') + "/playlists"
     output = run_ytdlp([
         "--flat-playlist",
@@ -54,14 +54,23 @@ def get_channel_playlists(channel_url: str) -> List[Dict[str, Any]]:
 
 def format_date(date_raw: str, timestamp: str = "NA") -> str:
     """Format date from YYYYMMDD to YYYY-MM-DD or convert timestamp."""
-    if date_raw and date_raw != "NA" and len(date_raw) == 8:
-        return f"{date_raw[0:4]}-{date_raw[4:6]}-{date_raw[6:8]}"
-    elif timestamp and timestamp != "NA":
+    if date_raw and date_raw != "NA" and date_raw != "None":
+        if len(date_raw) == 8:
+            return f"{date_raw[0:4]}-{date_raw[4:6]}-{date_raw[6:8]}"
+
+    if timestamp and timestamp != "NA" and timestamp != "None":
         try:
-            return datetime.fromtimestamp(int(timestamp)).strftime("%Y-%m-%d")
-        except (ValueError, TypeError):
-            return "NA"
-    return date_raw if date_raw else "NA"
+            ts = int(timestamp)
+            if ts > 0:
+                return datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+        except (ValueError, TypeError, OSError):
+            pass
+
+    # Return original date_raw if it's not "NA", otherwise return "NA"
+    if date_raw and date_raw not in ("NA", "None"):
+        return date_raw
+
+    return "NA"
 
 
 def format_video_line(video: Dict[str, Any]) -> str:
@@ -72,35 +81,59 @@ def format_video_line(video: Dict[str, Any]) -> str:
     return f"[{date}] {url} - {title}\n"
 
 
+def _get_field(parts: List[str], index: int, default: str = "NA") -> str:
+    """Safely get field from parts list."""
+    return parts[index] if len(parts) > index else default
+
+
+def _extract_date_fields(parts: List[str], include_availability: bool) -> tuple:
+    """Extract date-related fields from parts based on availability flag."""
+    offset = 3 if include_availability else 2
+
+    upload_date_raw = _get_field(parts, offset)
+    timestamp = _get_field(parts, offset + 1)
+    release_date = _get_field(parts, offset + 2)
+    release_timestamp = _get_field(parts, offset + 3)
+
+    return upload_date_raw, timestamp, release_date, release_timestamp
+
+
+def _get_best_date(upload_date_raw: str, timestamp: str, release_date: str, release_timestamp: str) -> str:
+    """Get the best available date from upload_date or release_date."""
+    upload_date = format_date(upload_date_raw, timestamp)
+    if upload_date == "NA":
+        upload_date = format_date(release_date, release_timestamp)
+    return upload_date
+
+
 def parse_video_entry(parts: List[str], include_availability: bool = True) -> Dict[str, Any]:
     """Parse video data from yt-dlp output parts."""
-    video_id = parts[0]
-    title = parts[1]
+    video_id = parts[0] if len(parts) > 0 else ""
+    title = parts[1] if len(parts) > 1 else ""
 
     if include_availability:
         availability = parts[2] if len(parts) > 2 else "unknown"
-        upload_date_raw = parts[3] if len(parts) > 3 else "NA"
-        timestamp = parts[4] if len(parts) > 4 else "NA"
     else:
         availability = "public"
-        upload_date_raw = parts[2] if len(parts) > 2 else "NA"
-        timestamp = parts[3] if len(parts) > 3 else "NA"
+
+    upload_date_raw, timestamp, release_date, release_timestamp = _extract_date_fields(parts, include_availability)
+    upload_date = _get_best_date(upload_date_raw, timestamp, release_date, release_timestamp)
 
     return {
         'id': video_id,
         'title': title,
         'url': f"https://www.youtube.com/watch?v={video_id}",
         'availability': availability,
-        'upload_date': format_date(upload_date_raw, timestamp)
+        'upload_date': upload_date
     }
 
 
 def get_playlist_videos(playlist_url: str) -> List[Dict[str, Any]]:
     """Retrieve all videos from a playlist."""
     output = run_ytdlp([
-        "--flat-playlist",
-        "--extractor-args", "youtube:approximate_date",
-        "--print", "%(id)s|||%(title)s|||%(availability)s|||%(upload_date)s|||%(timestamp)s",
+        "--skip-download",
+        "--ignore-errors",
+        "--print", "%(id)s|||%(title)s|||%(availability)s|||%(upload_date)s|||%(timestamp)s|||%(release_date)s|||%(release_timestamp)s",
         playlist_url
     ])
 
@@ -120,9 +153,9 @@ def get_channel_videos(channel_url: str) -> List[Dict[str, Any]]:
 
     videos_url = channel_url.rstrip('/') + "/videos"
     output = run_ytdlp([
-        "--flat-playlist",
-        "--extractor-args", "youtube:approximate_date",
-        "--print", "%(id)s|||%(title)s|||%(upload_date)s|||%(timestamp)s",
+        "--skip-download",
+        "--ignore-errors",
+        "--print", "%(id)s|||%(title)s|||%(upload_date)s|||%(timestamp)s|||%(release_date)s|||%(release_timestamp)s",
         videos_url
     ])
 
@@ -182,10 +215,18 @@ def _identify_unlisted_videos(
     """Identify videos that are in playlists but not in public videos."""
     potentially_unlisted = []
 
+    print("\n🔍 Analyzing videos...")
+    print(f"   Total videos in playlists: {len(all_playlist_videos)}")
+    print(f"   Total public videos: {len(public_ids)}")
+
     for video_id, video in all_playlist_videos.items():
         if video_id not in public_ids:
             video['reason'] = "In playlist but not in public videos"
             potentially_unlisted.append(video)
+            # Show availability if present
+            availability = video.get('availability', 'unknown')
+            title = str(video.get('title', ''))[:50]
+            print(f"   ✓ Found: {title} (availability: {availability})")
 
     return potentially_unlisted
 
@@ -222,23 +263,28 @@ def scan_channel(channel_url: str, include_public: bool = True, detailed: bool =
         public_videos = get_channel_videos(channel_url)
         results['public_videos'] = public_videos
         public_ids = {v['id'] for v in public_videos}
-        print(f"{len(public_videos)} public videos found")
+        print(f"✓ {len(public_videos)} public videos found")
+        if public_videos and len(public_videos) > 0:
+            print(f"   Sample: {public_videos[0].get('title', 'N/A')[:50]}")
 
     # 2. Get playlists
     playlists = get_channel_playlists(channel_url)
     results['playlists'] = playlists
-    print(f"{len(playlists)} playlists found")
+    print(f"\n✓ {len(playlists)} playlists found")
+    for pl in playlists[:3]:  # Show first 3
+        print(f"   - {pl.get('title', 'N/A')}")
 
     # 3. Scan each playlist
+    print("")
     all_playlist_videos = _scan_all_playlists(playlists)
     results['playlist_videos'] = list(all_playlist_videos.values())
-    print(f"{len(all_playlist_videos)} unique videos found in playlists")
+    print(f"\n✓ {len(all_playlist_videos)} unique videos found in playlists")
 
     # 4. Identify potentially unlisted videos
     if include_public:
         potentially_unlisted = _identify_unlisted_videos(all_playlist_videos, public_ids)
         results['potentially_unlisted'] = potentially_unlisted
-        print(f"{len(potentially_unlisted)} potentially unlisted videos")
+        print(f"\n✓ {len(potentially_unlisted)} potentially unlisted videos found")
 
         # Fetch detailed metadata if requested
         if detailed and potentially_unlisted:

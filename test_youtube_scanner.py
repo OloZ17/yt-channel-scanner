@@ -79,6 +79,12 @@ class TestFormatDate(unittest.TestCase):
         result = youtube_scanner.format_date("", "")
         self.assertEqual(result, "NA")
 
+    def test_format_date_malformed_8_digit_string(self):
+        """Test 8-character string gets formatted."""
+        # Any 8-character string gets formatted with dashes
+        result = youtube_scanner.format_date("abcdefgh", "NA")
+        self.assertEqual(result, "abcd-ef-gh")
+
 
 class TestFormatVideoLine(unittest.TestCase):
     """Tests for format_video_line function."""
@@ -134,6 +140,16 @@ class TestParseVideoEntry(unittest.TestCase):
         self.assertEqual(result['title'], 'Title Only')
         self.assertEqual(result['availability'], 'unknown')
         self.assertEqual(result['upload_date'], 'NA')
+
+    def test_parse_video_entry_with_release_date_fallback(self):
+        """Test parsing with release_date as fallback when upload_date is NA."""
+        parts = ['vid123', 'Test Video', 'public', 'NA', 'NA', '20231225', '1703548800']
+        result = youtube_scanner.parse_video_entry(parts, include_availability=True)
+
+        self.assertEqual(result['id'], 'vid123')
+        self.assertEqual(result['title'], 'Test Video')
+        self.assertEqual(result['availability'], 'public')
+        self.assertEqual(result['upload_date'], '2023-12-25')
 
 
 class TestGetChannelPlaylists(unittest.TestCase):

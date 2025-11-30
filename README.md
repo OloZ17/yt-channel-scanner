@@ -52,7 +52,7 @@ python youtube_scanner.py "https://www.youtube.com/@ChannelName"
 | ------------------ | --------------------------------------------------------------------------- |
 | `-o`, `--output`   | Output JSON filename (default: `youtube_scan_YYYY-MM-DD_HHMMSS.json`)       |
 | `--playlists-only` | Scan playlists only (faster, skips public videos)                           |
-| `--detailed`       | Fetch detailed metadata for each unlisted video (slower but accurate dates) |
+| `--detailed`       | Re-fetch metadata for potentially unlisted videos to ensure accuracy        |
 
 ### Examples
 
@@ -147,8 +147,7 @@ This script exploits this behavior: if a video appears in a channel's playlist b
 - **Possible false positives**: A video can be in a playlist without belonging to the channel
 - **Deleted videos**: Sometimes appear in playlists but are no longer accessible
 - **Rate limiting**: YouTube may throttle requests if too frequent
-- **Approximate dates**: By default, dates are approximate (extracted from "X months ago"). Use `--detailed` for exact dates (slower)
-- **Availability field**: May show as "NA" in fast mode; use `--detailed` to get accurate availability status
+- **Performance**: The script fetches full video metadata to provide accurate dates and availability. For very large channels with many playlists, this may take some time
 
 ## Troubleshooting
 
