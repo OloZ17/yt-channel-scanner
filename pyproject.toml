@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yt-scanner"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python script to scan YouTube channel playlists and detect unlisted videos"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -36,9 +36,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/OloZ17/YoutubeChannelScanner"
-Repository = "https://github.com/OloZ17/YoutubeChannelScanner"
-Issues = "https://github.com/OloZ17/YoutubeChannelScanner/issues"
+Homepage = "https://github.com/OloZ17/yt-channel-scanner"
+Repository = "https://github.com/OloZ17/yt-channel-scanner"
+Issues = "https://github.com/OloZ17/yt-channel-scanner/issues"
 
 [project.scripts]
 yt-scanner = "youtube_scanner:main"
