@@ -1,5 +1,9 @@
 # YouTube Channel Scanner
 
+<p align="left">
+  <img src="yt-scanner.png" alt="YT Scanner" width="120">
+</p>
+
 [![PyPI version](https://badge.fury.io/py/yt-scanner.svg)](https://badge.fury.io/py/yt-scanner)
 [![Python Versions](https://img.shields.io/pypi/pyversions/yt-scanner.svg)](https://pypi.org/project/yt-scanner/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
