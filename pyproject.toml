@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "yt-scanner"
+version = "0.1.0"
+description = "Python script to scan YouTube channel playlists and detect unlisted videos"
+readme = "README.md"
+requires-python = ">=3.7"
+license = "MIT"
+authors = [
+    {name = "Thomas Lamarche", email = "thomas.lamarche17@gmail.com"}
+]
+maintainers = [
+    {name = "Thomas Lamarche", email = "thomas.lamarche17@gmail.com"}
+]
+keywords = ["youtube", "scanner", "unlisted", "videos", "playlist", "yt-dlp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "yt-dlp>=2023.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/OloZ17/YoutubeChannelScanner"
+Repository = "https://github.com/OloZ17/YoutubeChannelScanner"
+Issues = "https://github.com/OloZ17/YoutubeChannelScanner/issues"
+
+[project.scripts]
+yt-scanner = "youtube_scanner:main"
+
+[tool.setuptools]
+py-modules = ["youtube_scanner"]

@@ -2,6 +2,9 @@
 youtube_scan_*.json
 youtube_scan_*_links.txt
 
+# Doc
+PYPI_PUBLICATION.md
+
 # Python
 __pycache__/
 *.py[cod]
