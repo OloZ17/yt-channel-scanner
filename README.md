@@ -1,5 +1,9 @@
 # YouTube Channel Scanner
 
+[![PyPI version](https://badge.fury.io/py/yt-scanner.svg)](https://badge.fury.io/py/yt-scanner)
+[![Python Versions](https://img.shields.io/pypi/pyversions/yt-scanner.svg)](https://pypi.org/project/yt-scanner/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Python script to scan YouTube channel playlists and detect **unlisted** videos.
 
 ## Description
